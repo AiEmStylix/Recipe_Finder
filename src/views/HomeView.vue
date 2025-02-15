@@ -4,7 +4,6 @@ import type { Recipe } from '@/types/Recipe';
 
 //PrimeVue Components
 import Button from 'primevue/button';
-import InputText from 'primevue/inputtext';
 import Chip from 'primevue/chip';
 import InputGroup from 'primevue/inputgroup';
 import Checkbox from 'primevue/checkbox';
@@ -13,11 +12,12 @@ import InputNumber from 'primevue/inputnumber';
 import Select from 'primevue/select';
 
 import { ref } from 'vue';
-import { getRecipeByIngredient } from '@/services/spoonacular';
-
+import { autoCompleteIngredient, getRecipeByIngredient } from '@/services/spoonacular';
+import { AutoComplete } from 'primevue';
 
 //Props
 const newTag = ref<string>('');
+const suggestions = ref<string[]>([]);
 const tags = ref<string[]>([]);
 const ignorePantry = ref<boolean>(false);
 const recipeNumber = ref<number>(10);
@@ -55,23 +55,33 @@ const queryApi = async () => {
         ignorePantry.value,
       );
       recipes.value = response;
+      console.log(recipes.value);
     } catch (error) {
       console.error('Error fetching data: ', error);
     }
+  }
+};
+
+const autoComplete = async (event: { query: string }) => {
+  try {
+    const response = await autoCompleteIngredient(event.query, 10, 'en', false, '');
+    suggestions.value = response.map((item: { name: string }) => item.name);
+  } catch (error) {
+    console.error('Error fetching autocomplete data: ', error);
   }
 };
 </script>
 
 <template>
   <div class="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-100">
-    <div class="w-full max-w-2xl p-6 bg-white rounded-lg shadow-lg">
+    <div class="container w-full max-w-2xl p-6 bg-white rounded-lg shadow-lg">
       <h1 class="mb-6 text-2xl font-bold text-center">Spoonacular Tag Input</h1>
 
       <!-- Input for adding ingredients -->
       <div class="my-4">
         <InputGroup>
-          <InputText id="ingredients" v-model="newTag" @keyup.enter="addTag" class="w-full"
-            placeholder="Search ingredients" />
+          <AutoComplete id="ingredients" v-model="newTag" :suggestions="suggestions" @keyup.enter="addTag"
+            @item-select="addTag" @complete="autoComplete" class="w-full" placeholder="Search ingredients" />
           <Button label="Add Ingredients" icon="pi pi-plus-circle" icon-pos="right" @click="addTag" />
         </InputGroup>
       </div>
@@ -96,7 +106,7 @@ const queryApi = async () => {
       <!-- Number of recipes input and slider -->
       <div class="flex flex-col items-center my-4">
         <label class="px-3" for="input-id">Number of Recipe</label>
-        <InputNumber v-model="recipeNumber" :min="1" :max="100" disabled class="my-3" input-id="number" />
+        <InputNumber v-model="recipeNumber" :min="1" :max="100" class="my-3" input-id="number" />
         <Slider v-model="recipeNumber" :min="1" :max="100" class="w-full my-3" />
       </div>
 
@@ -107,4 +117,18 @@ const queryApi = async () => {
     </div>
   </div>
 
+  <!-- Recipe list -->
+  <div class="flex flex-col items-center p-4 bg-gray-100">
+    <div class="container w-full max-w-2xl p-6 bg-white rounded-lg shadow-lg">
+      <h2 class="">Recipe List</h2>
+    </div>
+  </div>
 </template>
+<style scoped>
+:deep(.p-inputnumber input) {
+  width: 75px !important;
+  height: 40px !important;
+  font-size: 16px !important;
+  text-align: center;
+}
+</style>

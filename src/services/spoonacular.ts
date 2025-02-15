@@ -1,5 +1,6 @@
 import type { Recipe } from '@/types/Recipe';
 import type { AutoCompleteIngredient } from '@/types/AutoCompleteIngredient';
+import type { RecipeInstruction } from '@/types/RecipeInstructions';
 import axios from 'axios';
 
 const API_KEY = import.meta.env.VITE_SPOONACULAR_APIKEY;
@@ -77,6 +78,30 @@ export const autoCompleteIngredient = async (
       id: ingredient.id,
       aisle: ingredient.aisle,
       possibleUnits: ingredient.possibleUnits,
+    }));
+  } catch (error) {
+    console.error('Error fetching data: ', error);
+    return [];
+  }
+};
+
+export const getRecipeInstruction = async (
+  id: number,
+  stepBreakdown: boolean,
+): Promise<RecipeInstruction[]> => {
+  try {
+    const response = await spoonacularRecipeApi.get(`/${id}/analyzedInstructions`, {
+      params: { stepBreakdown },
+    });
+    //Map the response to make sure it has the correct response
+    return response.data.map((instruction: RecipeInstruction) => ({
+      name: instruction.name,
+      steps: instruction.steps.map((step) => ({
+        number: step.number,
+        step: step.step,
+        ingredients: step.ingredients,
+        equipment: step.equipment,
+      })),
     }));
   } catch (error) {
     console.error('Error fetching data: ', error);

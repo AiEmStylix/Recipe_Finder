@@ -2,7 +2,7 @@ import type { Recipe } from '@/types/Recipe';
 import type { AutoCompleteIngredient } from '@/types/AutoCompleteIngredient';
 import axios from 'axios';
 
-const API_KEY = '4a17dd59772a4818ba29360973571492 ';
+const API_KEY = import.meta.env.VITE_SPOONACULAR_APIKEY;
 
 const BASE_RECIPES_URL = 'https://api.spoonacular.com/recipes';
 const BASE_INGREDIENT_URL = 'https://api.spoonacular.com/food/ingredients';
@@ -76,7 +76,7 @@ export const autoCompleteIngredient = async (
       image: ingredient.image,
       id: ingredient.id,
       aisle: ingredient.aisle,
-      possibleUnits: ingredient.possileUnit,
+      possibleUnits: ingredient.possibleUnits,
     }));
   } catch (error) {
     console.error('Error fetching data: ', error);

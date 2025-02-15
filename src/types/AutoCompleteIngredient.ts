@@ -3,5 +3,5 @@ export interface AutoCompleteIngredient {
   image: string;
   id: number;
   aisle: string;
-  possileUnit: string[];
+  possibleUnits: string[];
 }

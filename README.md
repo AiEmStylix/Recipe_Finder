@@ -1,6 +1,21 @@
-# get_recipe
+# Recipe Finder
 
-This template should help get you started developing with Vue 3 in Vite.
+An app to find the recipe based on ingredient that you provided using Spoonacular API
+
+## Techonologies Used
+
+- **TypeScript**: Adds type safety and improves developer productivity.
+- **Vue 3**: A progressive JavaScript framework for building user interfaces.
+- **PrimeVue**: A rich set of UI components for Vue applications.
+- **TailwindCSS**: A utility-first CSS framework for rapidly building custom designs.
+- **Vitest**: A fast and modern testing framework for Vue applications.
+- **Spoonacular API**: Provides access to a vast database of recipes and food-related dat
+
+### Prerequisites
+
+- Node.js (v16 or higher)
+- npm (v7 or higher) or yarn
+- A Spoonacular API key (sign up at [Spoonacular](https://spoonacular.com/food-api) to get your API key)
 
 ## Recommended IDE Setup
 

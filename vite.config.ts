@@ -16,5 +16,5 @@ export default defineConfig({
   server: {
     port: 3000,
   },
-  base: '/Get_Recipe/',
+  base: '/Recipe_Finder/',
 });

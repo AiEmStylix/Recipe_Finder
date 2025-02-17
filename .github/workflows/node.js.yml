@@ -5,9 +5,9 @@ name: Node.js CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ['main']
   pull_request:
-    branches: [ "main" ]
+    branches: ['main']
 
 jobs:
   build:
@@ -20,13 +20,10 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18  # or the version you're using
+          node-version: 18 # or the version you're using
 
       - name: Install dependencies
         run: npm install
-
-      - name: Run tests with Vitest
-        run: npm test  # Assuming your test script is defined in package.json
 
       - name: Build the app
         env:

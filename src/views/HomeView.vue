@@ -1,6 +1,7 @@
 <script setup lang="ts">
 //Recipe interface
 import type { Recipe } from '@/types/Recipe';
+import type { RecipeInstruction } from '@/types/RecipeInstructions';
 
 //PrimeVue Components
 import Button from 'primevue/button';
@@ -11,17 +12,26 @@ import Slider from 'primevue/slider';
 import InputNumber from 'primevue/inputnumber';
 import Select from 'primevue/select';
 import AutoComplete from 'primevue/autocomplete';
+import Dialog from 'primevue/dialog';
 
 import { ref } from 'vue';
-import { autoCompleteIngredient, getRecipeByIngredient } from '@/services/spoonacular';
-
+import {
+  autoCompleteIngredient,
+  getRecipeByIngredient,
+  getRecipeInstruction,
+} from '@/services/spoonacular';
 
 //Props
+const showDialog = ref(false);
+const ignorePantry = ref<boolean>(false);
+
 const newTag = ref<string>('');
 const suggestions = ref<string[]>([]);
 const tags = ref<{ id: string; name: string }[]>([]);
-const ignorePantry = ref<boolean>(false);
 const recipeNumber = ref<number>(10);
+const recipeInstructions = ref<RecipeInstruction[]>([]);
+
+const selectedRecipe = ref<Recipe | null>(null);
 const options = ref<{ name: string; ranking: number }[]>([
   { name: 'Maximize Used Ingredients', ranking: 1 },
   { name: 'Minimize Missing Ingredients', ranking: 2 },
@@ -38,7 +48,7 @@ const addTag = (): void => {
   if (newTag.value.trim()) {
     tags.value.push({
       id: `${newTag.value.trim()} - ${Date.now()}`,
-      name: newTag.value.trim()
+      name: newTag.value.trim(),
     }); // Add the tag
     newTag.value = '';
   }
@@ -58,7 +68,7 @@ const queryApi = async () => {
       recipes.value = [];
 
       //Map the ingredients name to array
-      const ingredientNames = tags.value.map(tag => tag.name);
+      const ingredientNames = tags.value.map((tag) => tag.name);
       const response = await getRecipeByIngredient(
         ingredientNames,
         recipeNumber.value,
@@ -80,6 +90,23 @@ const autoComplete = async (event: { query: string }) => {
   } catch (error) {
     console.error('Error fetching autocomplete data: ', error);
   }
+};
+
+const getInstructions = async (id: number) => {
+  try {
+    const response = await getRecipeInstruction(id, true);
+    recipeInstructions.value = response; // Store the instructions
+  } catch (error) {
+    console.error('Error fetching recipe instructions: ', error);
+  }
+};
+
+// Function to open the dialog with selected recipe
+const openRecipeDialog = async (recipe: Recipe) => {
+  selectedRecipe.value = recipe;
+  recipeInstructions.value = [];
+  await getInstructions(recipe.id);
+  showDialog.value = true;
 };
 </script>
 
@@ -130,34 +157,85 @@ const autoComplete = async (event: { query: string }) => {
     </div>
 
     <!-- Recipes Display -->
-    <div v-if="recipes.length" class="mt-6">
+    <div v-if="recipes.length" class="mt-6 max-w-96">
       <h2 class="mb-4 text-xl font-semibold text-center">Recipes</h2>
       <ul class="space-y-4">
         <li v-for="recipe in recipes" :key="recipe.id" class="p-4 border rounded-lg shadow">
           <h3 class="text-lg font-bold">{{ recipe.title }}</h3>
           <img :src="recipe.image" :alt="recipe.title" class="object-cover w-full h-40 mt-2 rounded-md" />
-          <p class="mt-2 text-sm text-gray-700">Used Ingredients: {{ recipe.usedIngredientCount }}:
+          <p class="mt-2 text-sm text-gray-700">
+            Used Ingredients ({{ recipe.usedIngredientCount }}):
             <span v-if="recipe.usedIngredients && recipe.usedIngredients.length">
-              <span v-for="(ingredient, index) in recipe.usedIngredients" :key="index">
-                {{ ingredient.name }}
-                <span v-if="index < recipe.usedIngredients.length - 1">, </span>
-              </span>
+              {{recipe.usedIngredients.map((ingredient) => ingredient.name).join(', ')}}
             </span>
           </p>
-          <p class="text-sm text-gray-700">Missed Ingredients: {{ recipe.missedIngredientCount }} + {{
-            recipe.missedIngredients }}</p>
+          <br />
+          <p class="text-sm text-gray-700">
+            Missed Ingredients ({{ recipe.missedIngredientCount }}):
+            <span v-if="recipe.missedIngredients && recipe.missedIngredients.length">
+              {{recipe.missedIngredients.map((ingredient) => ingredient.name).join(', ')}}
+            </span>
+          </p>
           <div class="flex items-center gap-2 mt-2">
             <i class="text-red-500 pi pi-heart"></i>
             <span class="text-sm text-gray-700">{{ recipe.likes }}</span>
           </div>
           <div class="flex flex-row justify-between">
             <Button label="Like" icon="pi pi-thumbs-up" class="mt-2" />
-            <a :href="recipe.image" target="_blank" class="inline-block mt-2 text-blue-500 underline">View Recipe</a>
+            <Button label="View Recipe" icon="pi pi-eye" class="mt-2" @click="openRecipeDialog(recipe)" />
           </div>
         </li>
       </ul>
     </div>
+
+    <!-- Recipe Dialog -->
+    <Dialog v-model:visible="showDialog" modal header="Recipe Details" :style="{ width: '50vw' }">
+      <template v-if="selectedRecipe">
+        <div class="p-4">
+          <img :src="selectedRecipe.image" :alt="selectedRecipe.title"
+            class="object-cover w-full h-64 mb-4 rounded-md" />
+          <h2 class="text-2xl font-bold">{{ selectedRecipe.title }}</h2>
+
+          <!-- Used Ingredients -->
+          <h3 class="mt-4 text-lg font-semibold">Used Ingredients:</h3>
+          <ul class="pl-5 list-disc">
+            <li v-for="ingredient in selectedRecipe.usedIngredients" :key="ingredient.id">
+              {{ ingredient.amount }} {{ ingredient.unitShort }} - {{ ingredient.name }}
+            </li>
+          </ul>
+
+          <!-- Missed Ingredients -->
+          <h3 class="mt-4 text-lg font-semibold">Missed Ingredients:</h3>
+          <ul class="pl-5 list-disc">
+            <li v-for="ingredient in selectedRecipe.missedIngredients" :key="ingredient.id">
+              {{ ingredient.amount }} {{ ingredient.unitShort }} - {{ ingredient.name }}
+            </li>
+          </ul>
+
+          <!-- Instructions -->
+          <h3 class="mt-4 text-lg font-semibold">Instructions:</h3>
+          <ul class="pl-2 list-none">
+            <template v-if="recipeInstructions.length">
+              <li v-for="(instruction, index) in recipeInstructions" :key="index">
+                <h4 class="font-semibold">{{ instruction.name }}</h4>
+                <ul class="list-none">
+                  <li class="my-2" v-for="(step, stepIndex) in instruction.steps" :key="stepIndex">
+                    <span class="font-bold">Step {{ step.number }}:</span>
+                    {{ step.step }}
+                  </li>
+                </ul>
+              </li>
+            </template>
+            <template v-else>
+              <p class="text-gray-500">No instructions available.</p>
+            </template>
+          </ul>
+
+          <div class="flex justify-end mt-4">
+            <Button label="Close" icon="pi pi-times" @click="showDialog = false" />
+          </div>
+        </div>
+      </template>
+    </Dialog>
   </div>
-
-
 </template>

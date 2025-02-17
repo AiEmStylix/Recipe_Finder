@@ -213,7 +213,7 @@ const openRecipeDialog = async (recipe: Recipe) => {
           </ul>
 
           <!-- Instructions -->
-          <h3 class="mt-4 text-lg font-semibold">Instructions:</h3>
+          <h3 class="mt-4 text-xl font-semibold">Instructions:</h3>
           <ul class="pl-2 list-none">
             <template v-if="recipeInstructions.length">
               <li v-for="(instruction, index) in recipeInstructions" :key="index">
